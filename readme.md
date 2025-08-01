@@ -1,35 +1,53 @@
 # 📦 Parcel Delivery System API
 
-A secure, modular, and role-based backend API for managing parcel deliveries, inspired by platforms like Pathao Courier or Sundarban. This API supports authentication, role-based access, parcel tracking, and status updates — all built using **Express.js**, **MongoDB Atlas**, **TypeScript**, and **Zod** validation.
+A secure, modular, and role-based backend API for managing parcel deliveries — inspired by popular courier platforms like **Pathao Courier** or **Sundarban Courier**.
+
+This system supports **user authentication**, **role-based access control**, **parcel creation**, **status updates**, and **real-time parcel tracking** using modern backend technologies.
 
 ---
 
-## 🚀 Tech Stack
+## ✨ Features
 
-- **Backend**: Node.js, Express.js, TypeScript
-- **Database**: MongoDB Atlas with Mongoose
-- **Validation**: Zod
-- **Auth**: JWT (Access & Refresh tokens)
-- **Security**: Bcrypt for password hashing
+- 🔐 JWT-based Authentication (Access + Refresh tokens)
+- 👤 Role-based Access (Admin, Sender, Receiver)
+- 🧾 User Management (create, update role/status, get all)
+- 📦 Parcel Management (create, update status, view by role)
+- 🛰️ Parcel Tracking via `statusLogs[]`
+- ⚙️ Zod-based request validation
+- 🧱 Modular folder structure for scalability
+
+---
+
+## 🧱 Tech Stack
+
+| Layer          | Technology                         |
+|----------------|-------------------------------------|
+| Runtime        | Node.js                             |
+| Framework      | Express.js                          |
+| Language       | TypeScript                          |
+| Database       | MongoDB Atlas + Mongoose            |
+| Validation     | Zod                                 |
+| Authentication | JWT (access + refresh)              |
+| Security       | Bcrypt (password hashing)           |
+| Deployment     | Vercel 
 
 ---
 
 ## ⚙️ Setup Instructions
 
 1. **Clone the Repository**
-
-```bash
+````
 git clone https://github.com/Shanto57575/next_level_assignment_5.git
+
 cd parcel_delivery_system_backend
 ````
-
 2. **Install Dependencies**
 
 ```bash
 npm install
 ```
 
-3. **Set Up Environment Variables**
+3. **Configure Environment Variables**
 
 Create a `.env` file using `.env.sample` as reference
 
@@ -38,14 +56,6 @@ Create a `.env` file using `.env.sample` as reference
 ```bash
 npm run dev
 ```
-
----
-
-## 🔐 Authentication & Roles
-
-* **Admin**: Can manage users and parcels, update most parcel statuses
-* **Sender**: Can create, cancel, and track view own parcels
-* **Receiver**: Can confirm delivery, view incoming parcels(through filter)
 
 ---
 
@@ -59,9 +69,14 @@ npm run dev
 {
   "name": "user1",
   "email": "user1@gmail.com",
-  "password": "User!!!1234" (Password must be 8+ characters with at least one lowercase, uppercase, digit, and special character (@#$%!^&*?).)
+  "password": "User!!!1234"
 }
 ```
+
+> 🔒 Password must include:
+>
+> * At least 8 characters
+> * One lowercase, uppercase, digit, and special character (@#\$%!^&\*?)
 
 ---
 
@@ -78,9 +93,11 @@ npm run dev
 
 ---
 
-### ✅ Get All Users
+### ✅ Get All Users (Admin Only)
 
 `GET /api/v1/user/all-users`
+
+No request body required.
 
 ---
 
@@ -92,22 +109,26 @@ npm run dev
 
 ```json
 {
-  "email": "yourAdminAcccunt@gmail.com",
-  "password": "adminPassword"
+  "email": "your@email.com",
+  "password": "YourPassword"
 }
 ```
 
-Returns:
+**Response Example:**
 
 ```json
 {
-  "accessToken": "...",
-  "refreshToken": "...",
-  "user": {}
+  "accessToken": "JWT_ACCESS_TOKEN",
+  "refreshToken": "JWT_REFRESH_TOKEN",
+  "user": {
+    "_id": "...",
+    "email": "...",
+    "role": "SENDER"
+  }
 }
 ```
 
-Add to header for protected routes:
+🔐 Use the `accessToken` in headers:
 
 ```
 Authorization: <accessToken>
@@ -139,12 +160,6 @@ Authorization: <accessToken>
 
 `PATCH /api/v1/parcel/:parcelId`
 
-Depending on the role:
-
-* **Sender**: can `CANCEL` if not dispatched
-* **Receiver**: can `CONFIRM` if dispatched
-* **Admin**: can update any status except confirming
-
 ```json
 {
   "parcelType": "DOCUMENT",
@@ -155,14 +170,19 @@ Depending on the role:
 }
 ```
 
+> 🧠 Role-based rules:
+>
+> * **Sender**: can cancel if not dispatched
+> * **Receiver**: can confirm delivery
+> * **Admin**: can update all statuses except confirm
+
 ---
 
 ### ✅ View My Parcels (Sender/Receiver)
 
 `GET /api/v1/parcel/my-parcels/:userId?status=DISPATCHED`
 
-* Automatically filters based on last `statusLog`
-* Works for both sender and receiver
+* Filters parcels by latest statusLog status
 
 ---
 
@@ -170,13 +190,13 @@ Depending on the role:
 
 `GET /api/v1/parcel/all-parcels`
 
-*No body required*
+No request body required.
 
 ---
 
-## 🔁 Parcel Status Tracking
+## 📈 Parcel Status Tracking
 
-Each parcel contains an embedded `statusLog[]` array:
+Each parcel contains an array of status logs:
 
 ```json
 "statusLog": [
@@ -193,43 +213,66 @@ Each parcel contains an embedded `statusLog[]` array:
 ]
 ```
 
-The **latest entry** in the statusLogs array determines the current status.
-
----
-
-## ✅ Business Rules
-
-* ❌ Senders **cannot cancel** if parcel is already dispatched
-* ✅ Receivers can **only confirm** delivery
-* ❌ Admins cannot **confirm** delivery, but can update all other statuses
-* ✅ Blocked (`isActive: BLOCKED`) users are restricted from access
+> The **last statusLog entry** defines the current status of the parcel.
 
 ---
 
 ## 🧪 API Testing Notes
 
-* Test using **Postman** with tokens in `Authorization` header
-* Each response includes proper `statusCode` and error messages
-* All endpoints validated using **Zod**
+* Use **Postman**
+* Add `Authorization: <accessToken>` to test protected routes
+* All requests validated via **Zod** and return proper `statusCode` + messages
+* Common error formats:
+
+  ```json
+  {
+    "statusCode": 403,
+    "message": "Unauthorized access"
+  }
+  ```
 
 ---
 
-## 🧩 Modules & Design
+## 📜 Business Rules Summary
 
-* Modular folder structure used (`auth/`, `user/`, `parcel/`)
-* Controllers, services, routes, and validation schemas separated
-* Folder structure will be shown during **video walkthrough**
+| Rule                                                               | Role      |
+| ------------------------------------------------------------------ | --------- |
+| ❌ Sender **cannot cancel** after dispatch                          | Sender    |
+| ✅ Receiver can only **confirm** delivery if dispatched             | Receiver  |
+| ❌ Admin **cannot confirm**, but can update all other statuses      | Admin     |
+| ❌ Blocked users (`isActive: BLOCKED`) **cannot access** the system | Admin |
 
 ---
 
-## 🚀 Demo & Preview
+## 🧩 Project Structure
+
+> Organized by **feature-based modular structure**:
+
+```
+src/
+│
+app/
+│
+modules/
+    ├── auth/        # Login & Token logic
+    ├── user/        # User model, routes, controller
+    ├── parcel/      # Parcel model, routes, controller
+│
+├── middleware/  # Auth checks, error handling
+├── utils/       # Token helpers
+├── config/      # Environment config
+```
+
+> 🧠 The folder structure will be explained in the **video demo**
+
+---
+
+## 🚀 Demo & Video Walkthrough
 
 🎥 **Project Walkthrough Video**
+[▶️ Watch on Google Drive](https://drive.google.com/file/d/1nWAayCB3bvprsaMFI3wV6LAm7qb0IDoE/view?usp=sharing)
 
-[📺 Watch Video](https://drive.google.com/file/d/1nWAayCB3bvprsaMFI3wV6LAm7qb0IDoE/view?usp=sharing)
-
-🌐 **Live API Deployment**
-
-[🔗 Live Link](https://parcel-delivery-system-backend-umber.vercel.app)
+🌐 **Live API Endpoint**
+[🔗 Visit API (Vercel Hosted)](https://parcel-delivery-system-backend-umber.vercel.app)
 
 ---
