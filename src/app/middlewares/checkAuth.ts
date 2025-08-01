@@ -13,7 +13,7 @@ export const checkAuth =
     const accessToken = req.headers.authorization;
 
     if (!accessToken) {
-      throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized Access!");
+      throw new AppError(httpStatus.NOT_FOUND, "No Token Found!");
     }
 
     const verifiedToken = verifyToken(

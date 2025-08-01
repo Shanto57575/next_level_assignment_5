@@ -1,0 +1,15 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parcelRoutes = void 0;
+const express_1 = require("express");
+const validateRequest_1 = require("../../middlewares/validateRequest");
+const parcel_controller_1 = require("./parcel.controller");
+const user_interface_1 = require("../user/user.interface");
+const checkAuth_1 = require("../../middlewares/checkAuth");
+const parcel_validation_1 = require("./parcel.validation");
+const router = (0, express_1.Router)();
+router.post("/create-parcel", (0, checkAuth_1.checkAuth)(user_interface_1.Role.SENDER), (0, validateRequest_1.ZodValidation)(parcel_validation_1.createParcelZodSchema), parcel_controller_1.ParcelController.createParcel);
+router.get("/all-parcels", (0, checkAuth_1.checkAuth)(user_interface_1.Role.ADMIN), parcel_controller_1.ParcelController.getAllParcels);
+router.get("/my-parcels/:id", (0, checkAuth_1.checkAuth)(...Object.values(user_interface_1.Role)), parcel_controller_1.ParcelController.getMyParcels);
+router.patch("/:id", (0, checkAuth_1.checkAuth)(...Object.values(user_interface_1.Role)), (0, validateRequest_1.ZodValidation)(parcel_validation_1.updatedParcelZodSchema), parcel_controller_1.ParcelController.updateParcel);
+exports.parcelRoutes = router;

@@ -33,7 +33,7 @@ const loginService = async (payload: Partial<IUser>) => {
   }
 
   if (isUserExists.isDeleted) {
-    throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+    throw new AppError(httpStatus.NOT_FOUND, "User Is Deleted");
   }
 
   const jwtPayload = {

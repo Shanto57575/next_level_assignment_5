@@ -86,16 +86,30 @@ const updateParcelService = async (
 ) => {
   const { statusLog, ...restPayload } = payload;
 
+  // is parcel exists?
   const isParcelExists = await Parcel.findById(parcelId);
   if (!isParcelExists) {
     throw new AppError(httpStatus.NOT_FOUND, "parcel doesn't exists");
   }
 
+  // checking if ever it was dispatched
   const isDispatched = isParcelExists.statusLogs.some(
     (log) => log.status === ParcelStatus.DISPATCHED
   );
 
+  // checking one who is trying to cancel is actually the sender
+  if (
+    statusLog?.status === ParcelStatus.CANCELLED &&
+    req.user.role !== Role.SENDER
+  ) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Your Are not Authorized to cancel this parcel"
+    );
+  }
+
   if (isDispatched && statusLog?.status === ParcelStatus.CANCELLED) {
+    // if dispatched cant cancel
     throw new AppError(
       httpStatus.BAD_REQUEST,
       "parcel already dispatched you cant cancel it now"
@@ -106,10 +120,7 @@ const updateParcelService = async (
     statusLog?.status === ParcelStatus.CONFIRMED &&
     isParcelExists.receiver.toString() != req.user._id.toString()
   ) {
-    throw new AppError(
-      httpStatus.FORBIDDEN,
-      "Only receiver can confirm parcel"
-    );
+    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized Access");
   }
 
   const updatedParcel = await Parcel.findByIdAndUpdate(parcelId, restPayload, {

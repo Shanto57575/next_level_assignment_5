@@ -25,7 +25,7 @@ router.get(
 
 router.get(
   "/my-parcels/:id",
-  // checkAuth(...Object.values(Role)),
+  checkAuth(...Object.values(Role)),
   ParcelController.getMyParcels
 );
 

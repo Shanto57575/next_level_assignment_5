@@ -19,8 +19,8 @@ A secure, modular, and role-based backend API for managing parcel deliveries, in
 1. **Clone the Repository**
 
 ```bash
-git clone https://github.com/your-username/parcel-delivery-api.git
-cd parcel-delivery-api
+git clone https://github.com/Shanto57575/next_level_assignment_5.git
+cd parcel_delivery_system_backend
 ````
 
 2. **Install Dependencies**
@@ -57,9 +57,9 @@ npm run dev
 
 ```json
 {
-  "name": "king",
-  "email": "king@gmail.com",
-  "password": "K!ng1234"
+  "name": "user1",
+  "email": "user1@gmail.com",
+  "password": "User!!!1234" (Password must be 8+ characters with at least one lowercase, uppercase, digit, and special character (@#$%!^&*?).)
 }
 ```
 
@@ -124,11 +124,11 @@ Authorization: <accessToken>
 ```json
 {
   "parcelType": "PACKAGE",
-  "weight": 2.5,
+  "weight": 5,
   "sender": "688bb40f1045d66c869c3369",
-  "receiver": "688bb3f41045d66c869c3366",
-  "address": "123/A, Gulshan Avenue, Dhaka, Bangladesh",
-  "fee": 150,
+  "receiver": "688c827f1ed775d72242fa1a",
+  "address": "Halishahar, Chittagong",
+  "fee": 100,
   "deliveryDate": "2025-08-03"
 }
 ```
@@ -193,17 +193,8 @@ Each parcel contains an embedded `statusLog[]` array:
 ]
 ```
 
-The **latest entry** determines the current status.
+The **latest entry** in the statusLogs array determines the current status.
 
----
-
-## 🆔 Tracking ID
-
-Each parcel has a system-generated `trackingId` like:
-
-```
-TRK-20250801-000123
-```
 ---
 
 ## ✅ Business Rules
@@ -231,17 +222,14 @@ TRK-20250801-000123
 
 ---
 
-## 🎥 Submission Video (Suggested Structure)
+## 🚀 Demo & Preview
 
-Record a 5–10 minute video covering:
+🎥 **Project Walkthrough Video**
 
-1. **Intro** – Name + Project goal
-2. **Folder Overview** – Show `src/` modules and flow
-3. **Auth Flow** – Register, Login, Roles
-4. **Sender Demo** – Create, cancel, view parcel
-5. **Receiver Demo** – Confirm parcel
-6. **Admin Demo** – View all parcels, update status
-7. **Postman Testing** – Use tokens, test flows
-8. **Outro** – Mention `.env.sample`, thank you
+[📺 Watch Video](https://drive.google.com/file/d/1nWAayCB3bvprsaMFI3wV6LAm7qb0IDoE/view?usp=sharing)
+
+🌐 **Live API Deployment**
+
+[🔗 Live Link](https://parcel-delivery-system-backend-umber.vercel.app)
 
 ---
