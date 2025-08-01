@@ -1,0 +1,70 @@
+import bcrypt from "bcrypt";
+import { User } from "./user.model";
+import { envVars } from "../../config/env";
+import httpStatus from "http-status-codes";
+import AppError from "../../errorHelper/AppError";
+import { IAuthProvider, IUser, Role } from "./user.interface";
+
+const createUserService = async (payload: Partial<IUser>) => {
+  const { email, password, role, ...rest } = payload;
+
+  if (role === Role.ADMIN) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      `You cannot assign yourself to be ${role}`
+    );
+  }
+
+  const isUserExists = await User.findOne({ email });
+
+  if (isUserExists) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User already exists!");
+  }
+
+  // password hashing
+  const hashedPassword = await bcrypt.hash(
+    password as string,
+    Number(envVars.BCRYPT_SALT_ROUNDS)
+  );
+
+  // auth type
+  const authProvider: IAuthProvider = {
+    provider: "credentials",
+    providerId: email as string,
+  };
+
+  const userInfo = {
+    ...rest,
+    email,
+    role,
+    password: hashedPassword,
+    auths: authProvider,
+  };
+
+  const userData = await User.create(userInfo);
+  return userData;
+};
+
+const getAllUserService = async () => {
+  return await User.find();
+};
+
+const updateUserService = async (userId: string, payload: Partial<IUser>) => {
+  const updatedData = await User.findByIdAndUpdate(userId, payload, {
+    new: true,
+    runValidators: true,
+  });
+  if (!updatedData) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not Found");
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password, ...restData } = updatedData.toObject();
+
+  return restData;
+};
+
+export const userService = {
+  createUserService,
+  getAllUserService,
+  updateUserService,
+};
