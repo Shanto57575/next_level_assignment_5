@@ -7,17 +7,30 @@ import { User } from "../modules/user/user.model";
 import { JwtPayload } from "jsonwebtoken";
 import { IsActive } from "../modules/user/user.interface";
 
+interface TokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  sidebar_state?: string;
+}
+
 export const checkAuth =
   (...authRoles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
-    const accessToken = req.headers.authorization;
+    let accessToken: string | undefined;
+
+    if (req.headers.authorization) {
+      accessToken = req.headers.authorization.replace("Bearer ", "");
+    } else if (req.cookies) {
+      const cookies = req.cookies as TokenResponse;
+      accessToken = cookies.accessToken;
+    }
 
     if (!accessToken) {
       throw new AppError(httpStatus.NOT_FOUND, "No Token Found!");
     }
 
     const verifiedToken = verifyToken(
-      accessToken,
+      accessToken as string,
       envVars.JWT_ACCESS_SECRET
     ) as JwtPayload;
 

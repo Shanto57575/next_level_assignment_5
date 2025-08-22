@@ -42,7 +42,11 @@ const createUserService = async (payload: Partial<IUser>) => {
   };
 
   const userData = await User.create(userInfo);
-  return userData;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password: pass, ...restData } = userData.toObject();
+
+  return restData;
 };
 
 const getAllUserService = async () => {
@@ -63,8 +67,14 @@ const updateUserService = async (userId: string, payload: Partial<IUser>) => {
   return restData;
 };
 
+const getProfileService = async (userId: string) => {
+  const data = await User.findById(userId).select("-password");
+  return data;
+};
+
 export const userService = {
   createUserService,
   getAllUserService,
   updateUserService,
+  getProfileService,
 };
