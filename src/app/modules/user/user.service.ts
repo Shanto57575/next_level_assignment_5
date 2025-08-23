@@ -50,7 +50,7 @@ const createUserService = async (payload: Partial<IUser>) => {
 };
 
 const getAllUserService = async () => {
-  return await User.find();
+  return await User.find().select("-password").sort("-createdAt");
 };
 
 const updateUserService = async (userId: string, payload: Partial<IUser>) => {
