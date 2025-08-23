@@ -16,6 +16,12 @@ router.post(
 router.get("/all-users", checkAuth(Role.ADMIN), userController.getAllUsers);
 
 router.get(
+  "/all-receiver",
+  checkAuth(Role.SENDER),
+  userController.getAllReceiver
+);
+
+router.get(
   "/profile",
   checkAuth(...Object.values(Role)),
   userController.getProfile

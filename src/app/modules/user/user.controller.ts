@@ -32,6 +32,19 @@ const getAllUsers = catchAsync(
   }
 );
 
+const getAllReceiver = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const allReceiversInfo = await userService.getAllReceiverService();
+
+    sendResponse(res, {
+      success: true,
+      message: "all receivers retrieved Successfully",
+      statusCode: httpStatus.OK,
+      data: allReceiversInfo,
+    });
+  }
+);
+
 const getProfile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const decodedToken = req.user as JwtPayload;
@@ -65,6 +78,7 @@ const updateUser = catchAsync(
 export const userController = {
   createUser,
   getAllUsers,
+  getAllReceiver,
   getProfile,
   updateUser,
 };

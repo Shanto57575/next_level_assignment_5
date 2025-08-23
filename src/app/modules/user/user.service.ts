@@ -53,6 +53,12 @@ const getAllUserService = async () => {
   return await User.find().select("-password").sort("-createdAt");
 };
 
+const getAllReceiverService = async () => {
+  return await User.find({ role: "RECEIVER" })
+    .select("-password")
+    .sort("-createdAt");
+};
+
 const updateUserService = async (userId: string, payload: Partial<IUser>) => {
   const updatedData = await User.findByIdAndUpdate(userId, payload, {
     new: true,
@@ -75,6 +81,7 @@ const getProfileService = async (userId: string) => {
 export const userService = {
   createUserService,
   getAllUserService,
+  getAllReceiverService,
   updateUserService,
   getProfileService,
 };
