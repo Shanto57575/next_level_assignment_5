@@ -104,7 +104,7 @@ const updateParcelService = async (
   ) {
     throw new AppError(
       httpStatus.UNAUTHORIZED,
-      "Your Are not Authorized to cancel this parcel"
+      "Only Sender can cancel parcel"
     );
   }
 
@@ -120,7 +120,10 @@ const updateParcelService = async (
     statusLog?.status === ParcelStatus.CONFIRMED &&
     isParcelExists.receiver.toString() != req.user._id.toString()
   ) {
-    throw new AppError(httpStatus.UNAUTHORIZED, "Unauthorized Access");
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      "Only Receiver can Confirm status"
+    );
   }
 
   const updatedParcel = await Parcel.findByIdAndUpdate(parcelId, restPayload, {
@@ -173,7 +176,10 @@ const getMyParcelService = async (
 };
 
 const getAllParcelService = async () => {
-  return await Parcel.find();
+  return await Parcel.find()
+    .populate("receiver", "name email")
+    .populate("sender", "name email")
+    .sort("-createdAt");
 };
 
 export const ParcelService = {
