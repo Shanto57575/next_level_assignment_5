@@ -86,7 +86,7 @@ const updateParcelService = async (
 ) => {
   const { statusLog, ...restPayload } = payload;
 
-  // is parcel exists?
+  // is parcel exists
   const isParcelExists = await Parcel.findById(parcelId);
   if (!isParcelExists) {
     throw new AppError(httpStatus.NOT_FOUND, "parcel doesn't exists");
@@ -97,7 +97,7 @@ const updateParcelService = async (
     (log) => log.status === ParcelStatus.DISPATCHED
   );
 
-  // checking one who is trying to cancel is actually the sender
+  // checking one who is trying to cancel is actually the sender or not
   if (
     statusLog?.status === ParcelStatus.CANCELLED &&
     req.user.role !== Role.SENDER
