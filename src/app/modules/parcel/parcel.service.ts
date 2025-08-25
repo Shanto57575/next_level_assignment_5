@@ -175,11 +175,18 @@ const getMyParcelService = async (
   return filteredParcels;
 };
 
-const getAllParcelService = async () => {
-  return await Parcel.find()
+const getAllParcelService = async (query: Record<string, string>) => {
+  const { page, limit } = query;
+  const totalParcel = await Parcel.countDocuments();
+
+  const result = await Parcel.find()
     .populate("receiver", "name email")
     .populate("sender", "name email")
-    .sort("-createdAt");
+    .sort("-createdAt")
+    .skip((parseInt(page) - 1) * parseInt(limit))
+    .limit(parseInt(limit));
+
+  return { result, totalParcel };
 };
 
 const trackParcelService = async (query: Record<string, string>) => {

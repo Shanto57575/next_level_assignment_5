@@ -49,8 +49,18 @@ const createUserService = async (payload: Partial<IUser>) => {
   return restData;
 };
 
-const getAllUserService = async () => {
-  return await User.find().select("-password").sort("-createdAt");
+const getAllUserService = async (query: Record<string, string>) => {
+  const { page, limit } = query;
+  console.log(page, limit);
+  const totalUser = await User.countDocuments();
+  const result = await User.find()
+    .select("-password")
+    .sort("-createdAt")
+    .skip((parseInt(page) - 1) * parseInt(limit))
+    .limit(parseInt(limit));
+  return { result, totalUser };
+
+  // * 5 4
 };
 
 const getAllReceiverService = async () => {

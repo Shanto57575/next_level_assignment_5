@@ -53,7 +53,9 @@ const getMyParcels = catchAsync(
 
 const getAllParcels = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const AllParcels = await ParcelService.getAllParcelService();
+    const AllParcels = await ParcelService.getAllParcelService(
+      req.query as Record<string, string>
+    );
 
     sendResponse(res, {
       success: true,

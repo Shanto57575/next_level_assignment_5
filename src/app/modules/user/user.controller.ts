@@ -21,7 +21,9 @@ const createUser = catchAsync(
 
 const getAllUsers = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const allUserInfo = await userService.getAllUserService();
+    const allUserInfo = await userService.getAllUserService(
+      req.query as Record<string, string>
+    );
 
     sendResponse(res, {
       success: true,
