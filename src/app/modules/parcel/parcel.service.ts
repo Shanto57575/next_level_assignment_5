@@ -182,9 +182,19 @@ const getAllParcelService = async () => {
     .sort("-createdAt");
 };
 
+const trackParcelService = async (query: Record<string, string>) => {
+  return await Parcel.find({
+    trackingId: { $regex: query.trackingId, $options: "i" },
+  })
+    .populate("receiver", "name email")
+    .populate("sender", "name email")
+    .populate("statusLogs.updatedBy", "name email role");
+};
+
 export const ParcelService = {
   createParcelService,
   updateParcelService,
   getMyParcelService,
   getAllParcelService,
+  trackParcelService,
 };

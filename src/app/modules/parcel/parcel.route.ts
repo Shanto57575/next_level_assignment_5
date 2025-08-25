@@ -23,6 +23,8 @@ router.get(
   ParcelController.getAllParcels
 );
 
+router.get("/parcel-tracker", ParcelController.trackParcel);
+
 router.get(
   "/my-parcels/:id",
   checkAuth(...Object.values(Role)),

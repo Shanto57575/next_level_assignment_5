@@ -64,9 +64,26 @@ const getAllParcels = catchAsync(
   }
 );
 
+const trackParcel = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const query = req.query;
+    const AllParcels = await ParcelService.trackParcelService(
+      query as Record<string, string>
+    );
+
+    sendResponse(res, {
+      success: true,
+      message: "parcel retrieved Successfully",
+      statusCode: httpStatus.OK,
+      data: AllParcels,
+    });
+  }
+);
+
 export const ParcelController = {
   createParcel,
   updateParcel,
   getMyParcels,
   getAllParcels,
+  trackParcel,
 };
