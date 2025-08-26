@@ -97,6 +97,10 @@ const updateParcelService = async (
     (log) => log.status === ParcelStatus.DISPATCHED
   );
 
+  if (isDispatched && statusLog?.status !== ParcelStatus.CONFIRMED) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "parcel already dispatched");
+  }
+
   // checking one who is trying to cancel is actually the sender or not
   if (
     statusLog?.status === ParcelStatus.CANCELLED &&
