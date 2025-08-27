@@ -23,6 +23,12 @@ router.get(
   ParcelController.getAllParcels
 );
 
+router.get(
+  "/analytics",
+  checkAuth(Role.ADMIN),
+  ParcelController.getParcelAnalytics
+);
+
 router.get("/parcel-tracker", ParcelController.trackParcel);
 
 router.get(

@@ -50,10 +50,15 @@ const createUserService = async (payload: Partial<IUser>) => {
 };
 
 const getAllUserService = async (query: Record<string, string>) => {
-  const { page, limit } = query;
-  console.log(page, limit);
+  const { page, limit, searchTerm = "" } = query;
+
   const totalUser = await User.countDocuments();
-  const result = await User.find()
+  const result = await User.find({
+    $or: [
+      { name: { $regex: searchTerm, $options: "i" } },
+      { email: { $regex: searchTerm, $options: "i" } },
+    ],
+  })
     .select("-password")
     .sort("-createdAt")
     .skip((parseInt(page) - 1) * parseInt(limit))

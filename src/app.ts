@@ -9,12 +9,15 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://parcel-delivery-system-frontend-phi.vercel.app",
+    ],
     credentials: true,
   })
 );
-app.use(cookieParser());
 
+app.use(cookieParser());
 app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {

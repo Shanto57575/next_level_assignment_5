@@ -19,16 +19,33 @@ const catchAsync_1 = require("../../utils/catchAsync");
 const sendResponse_1 = require("../../utils/sendResponse");
 const auth_service_1 = require("./auth.service");
 const setAuthCookie_1 = require("../../utils/setAuthCookie");
-const login = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const login = (0, catchAsync_1.catchAsync)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const loggedInInfo = yield auth_service_1.authService.loginService(req.body);
     (0, setAuthCookie_1.SetAuthCookie)(res, loggedInInfo.userTokens);
     (0, sendResponse_1.sendResponse)(res, {
         success: true,
         message: "logged in Successfully",
         statusCode: http_status_codes_1.default.OK,
-        data: loggedInInfo,
+        data: loggedInInfo === null || loggedInInfo === void 0 ? void 0 : loggedInInfo.user,
+    });
+}));
+const logout = (0, catchAsync_1.catchAsync)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: true,
+    });
+    res.clearCookie("refreshToken", {
+        httpOnly: true,
+        secure: true,
+    });
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        message: "logged out Successfully",
+        statusCode: http_status_codes_1.default.OK,
+        data: null,
     });
 }));
 exports.authController = {
     login,
+    logout,
 };

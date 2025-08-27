@@ -45,10 +45,29 @@ const getMyParcels = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(
     });
 }));
 const getAllParcels = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const AllParcels = yield parcel_service_1.ParcelService.getAllParcelService();
+    const AllParcels = yield parcel_service_1.ParcelService.getAllParcelService(req.query);
     (0, sendResponse_1.sendResponse)(res, {
         success: true,
         message: "All parcels retrieved Successfully",
+        statusCode: http_status_codes_1.default.OK,
+        data: AllParcels,
+    });
+}));
+const getParcelAnalytics = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const analyticsData = yield parcel_service_1.ParcelService.getParcelAnalyticsService();
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        message: "analytics data retrieved Successfully",
+        statusCode: http_status_codes_1.default.OK,
+        data: analyticsData,
+    });
+}));
+const trackParcel = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const query = req.query;
+    const AllParcels = yield parcel_service_1.ParcelService.trackParcelService(query);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        message: "parcel retrieved Successfully",
         statusCode: http_status_codes_1.default.OK,
         data: AllParcels,
     });
@@ -58,4 +77,6 @@ exports.ParcelController = {
     updateParcel,
     getMyParcels,
     getAllParcels,
+    trackParcel,
+    getParcelAnalytics,
 };

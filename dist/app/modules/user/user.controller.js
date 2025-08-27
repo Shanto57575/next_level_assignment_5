@@ -27,12 +27,31 @@ const createUser = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(vo
     });
 }));
 const getAllUsers = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const allUserInfo = yield user_service_1.userService.getAllUserService();
+    const allUserInfo = yield user_service_1.userService.getAllUserService(req.query);
     (0, sendResponse_1.sendResponse)(res, {
         success: true,
         message: "all user retrieved Successfully",
         statusCode: http_status_codes_1.default.OK,
         data: allUserInfo,
+    });
+}));
+const getAllReceiver = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const allReceiversInfo = yield user_service_1.userService.getAllReceiverService();
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        message: "all receivers retrieved Successfully",
+        statusCode: http_status_codes_1.default.OK,
+        data: allReceiversInfo,
+    });
+}));
+const getProfile = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const decodedToken = req.user;
+    const userInfo = yield user_service_1.userService.getProfileService(decodedToken._id);
+    (0, sendResponse_1.sendResponse)(res, {
+        success: true,
+        message: "user info retrieved successfully",
+        statusCode: http_status_codes_1.default.OK,
+        data: userInfo,
     });
 }));
 const updateUser = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -47,5 +66,7 @@ const updateUser = (0, catchAsync_1.catchAsync)((req, res, next) => __awaiter(vo
 exports.userController = {
     createUser,
     getAllUsers,
+    getAllReceiver,
+    getProfile,
     updateUser,
 };

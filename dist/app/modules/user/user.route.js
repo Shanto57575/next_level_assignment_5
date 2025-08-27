@@ -10,5 +10,7 @@ const user_interface_1 = require("./user.interface");
 const router = (0, express_1.Router)();
 router.post("/create-user", (0, validateRequest_1.ZodValidation)(user_validation_1.createUserZodSchema), user_controller_1.userController.createUser);
 router.get("/all-users", (0, checkAuth_1.checkAuth)(user_interface_1.Role.ADMIN), user_controller_1.userController.getAllUsers);
+router.get("/all-receiver", (0, checkAuth_1.checkAuth)(user_interface_1.Role.SENDER), user_controller_1.userController.getAllReceiver);
+router.get("/profile", (0, checkAuth_1.checkAuth)(...Object.values(user_interface_1.Role)), user_controller_1.userController.getProfile);
 router.patch("/:id", (0, checkAuth_1.checkAuth)(user_interface_1.Role.ADMIN), user_controller_1.userController.updateUser);
 exports.userRoutes = router;

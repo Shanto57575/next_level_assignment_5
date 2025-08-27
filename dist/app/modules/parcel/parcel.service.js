@@ -80,17 +80,20 @@ const createParcelService = (req, payload) => __awaiter(void 0, void 0, void 0, 
 });
 const updateParcelService = (req, parcelId, payload) => __awaiter(void 0, void 0, void 0, function* () {
     const { statusLog } = payload, restPayload = __rest(payload, ["statusLog"]);
-    // is parcel exists?
+    // is parcel exists
     const isParcelExists = yield parcel_model_1.Parcel.findById(parcelId);
     if (!isParcelExists) {
         throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, "parcel doesn't exists");
     }
     // checking if ever it was dispatched
     const isDispatched = isParcelExists.statusLogs.some((log) => log.status === parcel_interface_1.ParcelStatus.DISPATCHED);
-    // checking one who is trying to cancel is actually the sender
+    if (isDispatched && (statusLog === null || statusLog === void 0 ? void 0 : statusLog.status) !== parcel_interface_1.ParcelStatus.CONFIRMED) {
+        throw new AppError_1.default(http_status_codes_1.default.UNAUTHORIZED, "parcel already dispatched");
+    }
+    // checking one who is trying to cancel is actually the sender or not
     if ((statusLog === null || statusLog === void 0 ? void 0 : statusLog.status) === parcel_interface_1.ParcelStatus.CANCELLED &&
         req.user.role !== user_interface_1.Role.SENDER) {
-        throw new AppError_1.default(http_status_codes_1.default.UNAUTHORIZED, "Your Are not Authorized to cancel this parcel");
+        throw new AppError_1.default(http_status_codes_1.default.UNAUTHORIZED, "Only Sender can cancel parcel");
     }
     if (isDispatched && (statusLog === null || statusLog === void 0 ? void 0 : statusLog.status) === parcel_interface_1.ParcelStatus.CANCELLED) {
         // if dispatched cant cancel
@@ -98,7 +101,7 @@ const updateParcelService = (req, parcelId, payload) => __awaiter(void 0, void 0
     }
     if ((statusLog === null || statusLog === void 0 ? void 0 : statusLog.status) === parcel_interface_1.ParcelStatus.CONFIRMED &&
         isParcelExists.receiver.toString() != req.user._id.toString()) {
-        throw new AppError_1.default(http_status_codes_1.default.UNAUTHORIZED, "Unauthorized Access");
+        throw new AppError_1.default(http_status_codes_1.default.UNAUTHORIZED, "Only Receiver can Confirm status");
     }
     const updatedParcel = yield parcel_model_1.Parcel.findByIdAndUpdate(parcelId, restPayload, {
         new: true,
@@ -120,31 +123,139 @@ const getMyParcelService = (userId, query) => __awaiter(void 0, void 0, void 0, 
     if (!isUserExists) {
         throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, "User Not Found!");
     }
-    const allParcels = yield parcel_model_1.Parcel.find({
-        $or: [{ sender: userId }, { receiver: userId }],
-    })
+    const filters = {
+        $and: [
+            {
+                $or: [{ sender: userId }, { receiver: userId }],
+            },
+            { trackingId: { $regex: query.searchTerm || "", $options: "i" } },
+        ],
+    };
+    const total = yield parcel_model_1.Parcel.countDocuments(filters);
+    const allParcels = yield parcel_model_1.Parcel.find(filters)
         .populate("sender", "name email")
-        .populate("receiver", "name email");
-    let filteredParcels = allParcels;
-    if (query.status) {
-        filteredParcels = allParcels.filter((parcel) => {
-            var _a;
-            const logs = parcel.statusLogs;
-            const latestStatus = (_a = logs === null || logs === void 0 ? void 0 : logs[logs.length - 1]) === null || _a === void 0 ? void 0 : _a.status;
-            return latestStatus === query.status;
-        });
-    }
-    if (!filteredParcels) {
-        throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, "No parcel Found");
-    }
-    return filteredParcels;
+        .populate("receiver", "name email")
+        .populate("statusLogs.updatedBy", "name email role")
+        .sort(query.sort === "OLDEST" ? "createdAt" : "-createdAt")
+        .skip((parseInt(query.page) - 1) * parseInt(query.limit))
+        .limit(parseInt(query.limit));
+    return { data: allParcels, total };
 });
-const getAllParcelService = () => __awaiter(void 0, void 0, void 0, function* () {
-    return yield parcel_model_1.Parcel.find();
+const getAllParcelService = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    const { page, limit, searchTerm = "" } = query;
+    const totalParcel = yield parcel_model_1.Parcel.countDocuments();
+    const result = yield parcel_model_1.Parcel.find({
+        trackingId: { $regex: searchTerm, $options: "i" },
+    })
+        .populate("receiver", "name email")
+        .populate("sender", "name email")
+        .populate("statusLogs.updatedBy", "name email role")
+        .sort(query.sort === "OLDEST" ? "createdAt" : "-createdAt")
+        .skip((parseInt(page) - 1) * parseInt(limit))
+        .limit(parseInt(limit));
+    return { result, totalParcel };
+});
+const trackParcelService = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield parcel_model_1.Parcel.find({
+        trackingId: { $regex: query.trackingId, $options: "i" },
+    })
+        .populate("receiver", "name email")
+        .populate("sender", "name email")
+        .populate("statusLogs.updatedBy", "name email role");
+});
+const getParcelAnalyticsService = () => __awaiter(void 0, void 0, void 0, function* () {
+    // 1️⃣ Total parcels by status
+    const statusAggregation = yield parcel_model_1.Parcel.aggregate([
+        { $unwind: "$statusLogs" },
+        { $sort: { "statusLogs.updatedAt": 1 } },
+        {
+            $group: {
+                _id: "$statusLogs.status",
+                count: { $sum: 1 },
+            },
+        },
+    ]);
+    // 2️⃣ Parcels per type
+    const typeAggregation = yield parcel_model_1.Parcel.aggregate([
+        {
+            $group: {
+                _id: "$parcelType",
+                count: { $sum: 1 },
+            },
+        },
+    ]);
+    // 3️⃣ Parcels created per day
+    const dailyAggregation = yield parcel_model_1.Parcel.aggregate([
+        {
+            $group: {
+                _id: {
+                    $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+                },
+                count: { $sum: 1 },
+                totalFee: { $sum: "$fee" },
+            },
+        },
+        { $sort: { _id: 1 } },
+    ]);
+    // 4️⃣ Total parcels sent vs received per user (optional)
+    const userAggregation = yield parcel_model_1.Parcel.aggregate([
+        {
+            $facet: {
+                sent: [
+                    { $group: { _id: "$sender", count: { $sum: 1 } } },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "user",
+                        },
+                    },
+                    { $unwind: "$user" },
+                    {
+                        $project: {
+                            _id: 0,
+                            name: "$user.name",
+                            email: "$user.email",
+                            count: 1,
+                        },
+                    },
+                ],
+                received: [
+                    { $group: { _id: "$receiver", count: { $sum: 1 } } },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "user",
+                        },
+                    },
+                    { $unwind: "$user" },
+                    {
+                        $project: {
+                            _id: 0,
+                            name: "$user.name",
+                            email: "$user.email",
+                            count: 1,
+                        },
+                    },
+                ],
+            },
+        },
+    ]);
+    return {
+        status: statusAggregation,
+        types: typeAggregation,
+        daily: dailyAggregation,
+        users: userAggregation[0],
+    };
 });
 exports.ParcelService = {
     createParcelService,
     updateParcelService,
     getMyParcelService,
     getAllParcelService,
+    trackParcelService,
+    getParcelAnalyticsService,
 };

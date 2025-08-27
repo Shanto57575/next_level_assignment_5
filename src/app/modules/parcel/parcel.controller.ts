@@ -66,6 +66,19 @@ const getAllParcels = catchAsync(
   }
 );
 
+const getParcelAnalytics = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const analyticsData = await ParcelService.getParcelAnalyticsService();
+
+    sendResponse(res, {
+      success: true,
+      message: "analytics data retrieved Successfully",
+      statusCode: httpStatus.OK,
+      data: analyticsData,
+    });
+  }
+);
+
 const trackParcel = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = req.query;
@@ -88,4 +101,5 @@ export const ParcelController = {
   getMyParcels,
   getAllParcels,
   trackParcel,
+  getParcelAnalytics,
 };

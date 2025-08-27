@@ -49,10 +49,30 @@ const createUserService = (payload) => __awaiter(void 0, void 0, void 0, functio
     const userInfo = Object.assign(Object.assign({}, rest), { email,
         role, password: hashedPassword, auths: authProvider });
     const userData = yield user_model_1.User.create(userInfo);
-    return userData;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _a = userData.toObject(), { password: pass } = _a, restData = __rest(_a, ["password"]);
+    return restData;
 });
-const getAllUserService = () => __awaiter(void 0, void 0, void 0, function* () {
-    return yield user_model_1.User.find();
+const getAllUserService = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    const { page, limit, searchTerm = "" } = query;
+    const totalUser = yield user_model_1.User.countDocuments();
+    const result = yield user_model_1.User.find({
+        $or: [
+            { name: { $regex: searchTerm, $options: "i" } },
+            { email: { $regex: searchTerm, $options: "i" } },
+        ],
+    })
+        .select("-password")
+        .sort("-createdAt")
+        .skip((parseInt(page) - 1) * parseInt(limit))
+        .limit(parseInt(limit));
+    return { result, totalUser };
+    // * 5 4
+});
+const getAllReceiverService = () => __awaiter(void 0, void 0, void 0, function* () {
+    return yield user_model_1.User.find({ role: "RECEIVER" })
+        .select("-password")
+        .sort("-createdAt");
 });
 const updateUserService = (userId, payload) => __awaiter(void 0, void 0, void 0, function* () {
     const updatedData = yield user_model_1.User.findByIdAndUpdate(userId, payload, {
@@ -66,8 +86,14 @@ const updateUserService = (userId, payload) => __awaiter(void 0, void 0, void 0,
     const _a = updatedData.toObject(), { password } = _a, restData = __rest(_a, ["password"]);
     return restData;
 });
+const getProfileService = (userId) => __awaiter(void 0, void 0, void 0, function* () {
+    const data = yield user_model_1.User.findById(userId).select("-password");
+    return data;
+});
 exports.userService = {
     createUserService,
     getAllUserService,
+    getAllReceiverService,
     updateUserService,
+    getProfileService,
 };

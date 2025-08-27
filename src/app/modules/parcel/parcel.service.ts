@@ -156,37 +156,40 @@ const getMyParcelService = async (
   if (!isUserExists) {
     throw new AppError(httpStatus.NOT_FOUND, "User Not Found!");
   }
-  const allParcels = await Parcel.find({
-    $or: [{ sender: userId }, { receiver: userId }],
-  })
+
+  const filters = {
+    $and: [
+      {
+        $or: [{ sender: userId }, { receiver: userId }],
+      },
+      { trackingId: { $regex: query.searchTerm || "", $options: "i" } },
+    ],
+  };
+
+  const total = await Parcel.countDocuments(filters);
+
+  const allParcels = await Parcel.find(filters)
     .populate("sender", "name email")
-    .populate("receiver", "name email");
+    .populate("receiver", "name email")
+    .populate("statusLogs.updatedBy", "name email role")
+    .sort(query.sort === "OLDEST" ? "createdAt" : "-createdAt")
+    .skip((parseInt(query.page) - 1) * parseInt(query.limit))
+    .limit(parseInt(query.limit));
 
-  let filteredParcels = allParcels;
-
-  if (query.status) {
-    filteredParcels = allParcels.filter((parcel) => {
-      const logs = parcel.statusLogs;
-      const latestStatus = logs?.[logs.length - 1]?.status;
-      return latestStatus === query.status;
-    });
-  }
-
-  if (!filteredParcels) {
-    throw new AppError(httpStatus.NOT_FOUND, "No parcel Found");
-  }
-
-  return filteredParcels;
+  return { data: allParcels, total };
 };
 
 const getAllParcelService = async (query: Record<string, string>) => {
-  const { page, limit } = query;
+  const { page, limit, searchTerm = "" } = query;
   const totalParcel = await Parcel.countDocuments();
 
-  const result = await Parcel.find()
+  const result = await Parcel.find({
+    trackingId: { $regex: searchTerm, $options: "i" },
+  })
     .populate("receiver", "name email")
     .populate("sender", "name email")
-    .sort("-createdAt")
+    .populate("statusLogs.updatedBy", "name email role")
+    .sort(query.sort === "OLDEST" ? "createdAt" : "-createdAt")
     .skip((parseInt(page) - 1) * parseInt(limit))
     .limit(parseInt(limit));
 
@@ -202,10 +205,104 @@ const trackParcelService = async (query: Record<string, string>) => {
     .populate("statusLogs.updatedBy", "name email role");
 };
 
+const getParcelAnalyticsService = async () => {
+  // 1️⃣ Total parcels by status
+  const statusAggregation = await Parcel.aggregate([
+    { $unwind: "$statusLogs" },
+    { $sort: { "statusLogs.updatedAt": 1 } },
+    {
+      $group: {
+        _id: "$statusLogs.status",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // 2️⃣ Parcels per type
+  const typeAggregation = await Parcel.aggregate([
+    {
+      $group: {
+        _id: "$parcelType",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // 3️⃣ Parcels created per day
+  const dailyAggregation = await Parcel.aggregate([
+    {
+      $group: {
+        _id: {
+          $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+        },
+        count: { $sum: 1 },
+        totalFee: { $sum: "$fee" },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  // 4️⃣ Total parcels sent vs received per user (optional)
+  const userAggregation = await Parcel.aggregate([
+    {
+      $facet: {
+        sent: [
+          { $group: { _id: "$sender", count: { $sum: 1 } } },
+          {
+            $lookup: {
+              from: "users",
+              localField: "_id",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          { $unwind: "$user" },
+          {
+            $project: {
+              _id: 0,
+              name: "$user.name",
+              email: "$user.email",
+              count: 1,
+            },
+          },
+        ],
+        received: [
+          { $group: { _id: "$receiver", count: { $sum: 1 } } },
+          {
+            $lookup: {
+              from: "users",
+              localField: "_id",
+              foreignField: "_id",
+              as: "user",
+            },
+          },
+          { $unwind: "$user" },
+          {
+            $project: {
+              _id: 0,
+              name: "$user.name",
+              email: "$user.email",
+              count: 1,
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return {
+    status: statusAggregation,
+    types: typeAggregation,
+    daily: dailyAggregation,
+    users: userAggregation[0],
+  };
+};
+
 export const ParcelService = {
   createParcelService,
   updateParcelService,
   getMyParcelService,
   getAllParcelService,
   trackParcelService,
+  getParcelAnalyticsService,
 };

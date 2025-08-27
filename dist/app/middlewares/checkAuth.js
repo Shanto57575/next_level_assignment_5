@@ -20,7 +20,14 @@ const env_1 = require("../config/env");
 const user_model_1 = require("../modules/user/user.model");
 const user_interface_1 = require("../modules/user/user.interface");
 const checkAuth = (...authRoles) => (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const accessToken = req.headers.authorization;
+    let accessToken;
+    if (req.headers.authorization) {
+        accessToken = req.headers.authorization.replace("Bearer ", "");
+    }
+    else if (req.cookies) {
+        const cookies = req.cookies;
+        accessToken = cookies.accessToken;
+    }
     if (!accessToken) {
         throw new AppError_1.default(http_status_codes_1.default.NOT_FOUND, "No Token Found!");
     }
