@@ -15,9 +15,9 @@ export const globalErrorHandler = async (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ) => {
-  if (envVars.NODE_ENV === "development") {
-    console.log(err);
-  }
+  // if (envVars.NODE_ENV === "development") {
+  //   console.log(err);
+  // }
 
   let errorSources: any = [];
   let statusCode = 500;
